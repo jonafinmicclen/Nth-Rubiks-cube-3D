@@ -16,7 +16,7 @@ ORANGE = (255,85,37)
 GREEN = (25,155,76)
 YELLOW = (254,213,47)
 
-all_colors = np.array([WHITE, GREEN, YELLOW, BLUE, RED, ORANGE])/255
+ALL_COLORS = np.array([WHITE, GREEN, YELLOW, BLUE, RED, ORANGE])/255
 
 class Cube:
     def __init__(self, position, colors):
@@ -62,7 +62,7 @@ class CubeSet:
         for x in range(0, size):
             for y in range(0, size):
                 for z in range(0, size):
-                    colors = all_colors
+                    colors = ALL_COLORS
                     cube = Cube(position=(x * spacing, y * spacing, z * spacing), colors=colors)
                     self.cubes.append(cube)
 
