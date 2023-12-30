@@ -101,6 +101,7 @@ class MagicCube:
     def __init__(self, size, spacing = 2):
 
         self.cubes = []
+        self.size = size
         #offset to keep cube in center
         offset = size+(spacing-2)
         for x in range(0, size):
@@ -122,6 +123,7 @@ class MagicCube:
         glPopMatrix()
 
     def rotate_face(self, axis = (1,0,0), slice_no = 0, angle = 1):
+
         match axis:
             case (1,0,0):
                 cubes_to_rotate = self.x_slices[slice_no]
@@ -130,10 +132,9 @@ class MagicCube:
             case (0,0,1):
                 cubes_to_rotate = self.z_slices[slice_no]
 
-        position_of_rotation_center = self.cubes[cubes_to_rotate[4]].position
-        axis_of_rotation = axis
-        for idx in cubes_to_rotate:
-            self.cubes[idx].rotate(angle, axis_of_rotation, position_of_rotation_center)
+        position_of_rotation_center = (np.asarray(self.cubes[cubes_to_rotate[0]].position) + np.asarray(self.cubes[cubes_to_rotate[-1]].position))/2
+        for cube_index in cubes_to_rotate:
+            self.cubes[cube_index].rotate(angle, axis, position_of_rotation_center)
 
 # Create rubiks cube
 rubiks_cube = MagicCube(size=3)
