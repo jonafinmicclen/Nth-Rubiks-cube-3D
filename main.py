@@ -15,7 +15,6 @@ BLUE = (13,72,172)
 ORANGE = (255,85,37)
 GREEN = (25,155,76)
 YELLOW = (254,213,47)
-
 ALL_COLORS = np.array([WHITE, GREEN, YELLOW, BLUE, RED, ORANGE])/255
 
 class Cube:
@@ -60,13 +59,10 @@ class Cube:
 
         glPopMatrix()
 
-    def rotate(self, angle, axis, rotation_point, direction="clockwise"):
-        # Update rotation
-        if direction == "clockwise":
-            self.rotation -= angle
-        else:
-            self.rotation += angle
+    def rotate(self, angle, axis, rotation_point):
 
+        # Update rotation
+        self.rotation += angle
         self.rotation_axis = axis
 
         # Convert rotation axis to a numpy array for matrix multiplication
@@ -101,48 +97,61 @@ class Cube:
         ])
         return rotation_matrix
     
-class CubeSet:
-    def __init__(self, size, spacing):
-        self.cubes = []
+class MagicCube:
+    def __init__(self, size, spacing = 2):
 
+        self.cubes = []
+        #offset to keep cube in center
+        offset = size+(spacing-2)
         for x in range(0, size):
             for y in range(0, size):
                 for z in range(0, size):
                     colors = ALL_COLORS
-                    cube = Cube(position=(x * spacing, y * spacing, z * spacing), colors=colors)
+                    cube = Cube(position=(x * spacing - offset, y * spacing - offset, z * spacing - offset), colors=colors)
                     self.cubes.append(cube)
+
+        #get index in cubes of slices on each axis
+        self.x_slices = [[x * size * size + y * size + z for y in range(size) for z in range(size)] for x in range(size)]
+        self.y_slices = [[x * size * size + y * size + z for x in range(size) for z in range(size)] for y in range(size)]
+        self.z_slices = [[x * size * size + y * size + z for x in range(size) for y in range(size)] for z in range(size)]
 
     def draw(self):
         glPushMatrix()
-
         for cube in self.cubes:
             cube.draw()
-
         glPopMatrix()
 
-#Initialise pygame window with opengl
+    def rotate_face(self, axis = (1,0,0), slice_no = 0, angle = 1):
+        match axis:
+            case (1,0,0):
+                cubes_to_rotate = self.x_slices[slice_no]
+            case (0,1,0):
+                cubes_to_rotate = self.y_slices[slice_no]
+            case (0,0,1):
+                cubes_to_rotate = self.z_slices[slice_no]
+
+        position_of_rotation_center = self.cubes[cubes_to_rotate[4]].position
+        axis_of_rotation = axis
+        for idx in cubes_to_rotate:
+            self.cubes[idx].rotate(angle, axis_of_rotation, position_of_rotation_center)
+
+# Create rubiks cube
+rubiks_cube = MagicCube(size=3)
+
+# Initialise pygame window with opengl
 pygame.init()
 display = (WIDTH, HEIGHT)
 pygame.display.set_mode(display, DOUBLEBUF | OPENGL)
 pygame.display.set_caption('Rubiks')
+clock = pygame.time.Clock()
+TARGET_FPS = 30
 
-#Position perspective
+# Position perspective
 gluPerspective(45, (display[0] / display[1]), 0.1, 50.0)
 glTranslatef(0.0, 0.0, -20)
 
 # Enable depth testing so only correct faces are drawn
 glEnable(GL_DEPTH_TEST)
-
-# Cube set creation
-cube_set = CubeSet(size=3, spacing=2)
-
-# Specify the indices of cubes you want to rotate separately
-cubes_to_rotate = [0, 1, 2, 9, 10, 11, 18, 19, 20]  # Replace with the actual indices you want to rotate
-
-clock = pygame.time.Clock()
-fps = 30
-
-print(cube_set.cubes[10].position)
 
 while True:
     for event in pygame.event.get():
@@ -150,15 +159,15 @@ while True:
             pygame.quit()
             quit()
 
-    # Rotation for the entire CubeSet
-    glRotatef(1, 3, 1, 1)
+    # Rotation for the entire MagicCube
+    glRotatef(0.5, 1, 1, 1)
 
-    # Rotation for specific cubes
-    for idx in cubes_to_rotate:
-        cube_set.cubes[idx].rotate(1, (0, 1, 0), cube_set.cubes[10].position, 'acw')
+    # Rotate specific face
+    rubiks_cube.rotate_face(axis = (0,0,1), slice_no = 1, angle = 1)
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
-    cube_set.draw()
+    rubiks_cube.draw()
     pygame.display.flip()
-    clock.tick(fps)
+    clock.tick(TARGET_FPS)
+
