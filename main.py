@@ -4,11 +4,13 @@ from OpenGL.GL import *
 from OpenGL.GLU import *
 import numpy as np
 
-#define screen dimensions
+# define screen dimensions
 WIDTH = 1920
 HEIGHT = 1080
+WINDOW_NAME = 'Rubiks Cube Sim'
+TARGET_FPS = 30
 
-#define colors
+# define colors
 WHITE = (255,255,255)
 RED = (137,18,20)
 BLUE = (13,72,172)
@@ -98,17 +100,16 @@ class Cube:
         return rotation_matrix
     
 class MagicCube:
-    def __init__(self, size, spacing = 2):
+    def __init__(self, size, spacing = 2, offset = [0,0,0]):
 
         self.cubes = []
         self.size = size
         #offset to keep cube in center
-        offset = size+(spacing-2)
         for x in range(0, size):
             for y in range(0, size):
                 for z in range(0, size):
                     colors = ALL_COLORS
-                    cube = Cube(position=(x * spacing - offset, y * spacing - offset, z * spacing - offset), colors=colors)
+                    cube = Cube(position=(x * spacing + offset[0], y * spacing + offset[1], z * spacing + offset[2]), colors=colors)
                     self.cubes.append(cube)
 
         #get index in cubes of slices on each axis
@@ -136,39 +137,50 @@ class MagicCube:
         for cube_index in cubes_to_rotate:
             self.cubes[cube_index].rotate(angle, axis, position_of_rotation_center)
 
-# Create rubiks cube
-rubiks_cube = MagicCube(size=3)
+def main():
 
-# Initialise pygame window with opengl
-pygame.init()
-display = (WIDTH, HEIGHT)
-pygame.display.set_mode(display, DOUBLEBUF | OPENGL)
-pygame.display.set_caption('Rubiks')
-clock = pygame.time.Clock()
-TARGET_FPS = 30
+    # Initialise pygame window with opengl
+    pygame.init()
+    display = (WIDTH, HEIGHT)
+    pygame.display.set_mode(display, DOUBLEBUF | OPENGL)
+    pygame.display.set_caption(WINDOW_NAME)
+    clock = pygame.time.Clock()
 
-# Position perspective
-gluPerspective(45, (display[0] / display[1]), 0.1, 50.0)
-glTranslatef(0.0, 0.0, -20)
+    # Position perspective
+    gluPerspective(45, (display[0] / display[1]), 0.1, 50.0)
+    glTranslatef(0.0, 0.0, -30)
 
-# Enable depth testing so only correct faces are drawn
-glEnable(GL_DEPTH_TEST)
+    # Enable depth testing so only correct faces are drawn
+    glEnable(GL_DEPTH_TEST)
 
-while True:
+    # Create rubiks cubes
+    rubiks_cube = MagicCube(size=3, offset=[6,0,0], spacing=2.2)
+    rubiks_cube1 = MagicCube(size=2, offset=[-4,0,0], spacing=2.2)
+    rubiks_cube2 = MagicCube(size=4, offset=[-15,0,0], spacing=2.2)
+
+    while True:
+        handle_events()
+        update_cubes(rubiks_cube, rubiks_cube1, rubiks_cube2)
+        render_frame(rubiks_cube, rubiks_cube1, rubiks_cube2)
+        pygame.display.flip()
+        clock.tick(TARGET_FPS)
+
+def handle_events():
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
             quit()
 
-    # Rotation for the entire MagicCube
-    glRotatef(0.5, 1, 1, 1)
+def update_cubes(*cubes):
+    for cube in cubes:
+        cube.rotate_face(axis=(0, 0, 1), slice_no=1, angle=1)
+        cube.rotate_face(axis=(0, 1, 0), slice_no=0, angle=-2)
+        cube.rotate_face(axis=(1, 0, 0), slice_no=3, angle=1.5)
 
-    # Rotate specific face
-    rubiks_cube.rotate_face(axis = (0,0,1), slice_no = 1, angle = 1)
-
+def render_frame(*cubes):
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+    for cube in cubes:
+        cube.draw()
 
-    rubiks_cube.draw()
-    pygame.display.flip()
-    clock.tick(TARGET_FPS)
-
+if __name__ == "__main__":
+    main()
