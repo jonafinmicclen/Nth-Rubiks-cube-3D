@@ -160,7 +160,11 @@ def main():
 
     while True:
         handle_events()
-        update_cubes(rubiks_cube, rubiks_cube1, rubiks_cube2)
+
+        rubiks_cube.rotate_face(axis=(0, 0, 1), slice_no=1, angle=1)
+        rubiks_cube1.rotate_face(axis=(0, 1, 0), slice_no=0, angle=-2)
+        rubiks_cube2.rotate_face(axis=(1, 0, 0), slice_no=3, angle=1.5)
+        
         render_frame(rubiks_cube, rubiks_cube1, rubiks_cube2)
         pygame.display.flip()
         clock.tick(TARGET_FPS)
@@ -170,12 +174,6 @@ def handle_events():
         if event.type == pygame.QUIT:
             pygame.quit()
             quit()
-
-def update_cubes(*cubes):
-    for cube in cubes:
-        cube.rotate_face(axis=(0, 0, 1), slice_no=1, angle=1)
-        cube.rotate_face(axis=(0, 1, 0), slice_no=0, angle=-2)
-        cube.rotate_face(axis=(1, 0, 0), slice_no=3, angle=1.5)
 
 def render_frame(*cubes):
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
