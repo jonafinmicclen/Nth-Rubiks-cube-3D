@@ -2,6 +2,7 @@ import pygame
 from pygame.locals import *
 from OpenGL.GL import *
 from OpenGL.GLU import *
+import random
 
 class Cube:
     def __init__(self, position):
@@ -27,12 +28,12 @@ class Cube:
 
         # Each face has 9 distinct colors
         self.colors = [
-            [(1, 0, 0), (1, 0, 0), (1, 0, 0), (1, 0, 0), (1, 0, 0), (1, 0, 0), (1, 0, 0), (1, 0, 0), (1, 0, 0)],  # Colors for the first face
-            [(0, 1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0)],  # Colors for the second face
-            [(0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1)],  # Colors for the third face
-            [(1, 1, 0), (1, 1, 0), (1, 1, 0), (1, 1, 0), (1, 1, 0), (1, 1, 0), (1, 1, 0), (1, 1, 0), (1, 1, 0)],  # Colors for the fourth face
-            [(1, 0, 1), (1, 0, 1), (1, 0, 1), (1, 0, 1), (1, 0, 1), (1, 0, 1), (1, 0, 1), (1, 0, 1), (1, 0, 1)],  # Colors for the fifth face
-            [(0, 1, 1), (0, 1, 1), (0, 1, 1), (0, 1, 1), (0, 1, 1), (0, 1, 1), (0, 1, 1), (0, 1, 1), (0, 1, 1)]   # Colors for the sixth face
+            (random.random(), random.random(), random.random()),  # Color for the first face
+            (random.random(), random.random(), random.random()),  # Color for the second face
+            (random.random(), random.random(), random.random()),  # Color for the third face
+            (random.random(), random.random(), random.random()),  # Color for the fourth face
+            (random.random(), random.random(), random.random()),  # Color for the fifth face
+            (random.random(), random.random(), random.random())   # Color for the sixth face
         ]
 
         self.position = position
@@ -42,7 +43,7 @@ class Cube:
 
         for i, surface in enumerate(self.surfaces):
             for j, vertex in enumerate(surface):
-                glColor3fv(self.colors[i][j])  # Set color for each vertex in the current face
+                glColor3fv(self.colors[i])  # Set the unique color for each face
                 glVertex3fv((self.vertices[vertex][0] + self.position[0],
                              self.vertices[vertex][1] + self.position[1],
                              self.vertices[vertex][2] + self.position[2]))
@@ -55,14 +56,14 @@ pygame.display.set_mode(display, DOUBLEBUF | OPENGL)
 pygame.display.set_caption('Colored Cubes')
 
 gluPerspective(45, (display[0] / display[1]), 0.1, 50.0)
-glTranslatef(0.0, 0.0, -15)  # Adjust the initial translation
+glTranslatef(0.0, 0.0, -15)
 
 # Enable depth testing
 glEnable(GL_DEPTH_TEST)
 
 # Create a 3x3x3 grid of cubes with the original spacing
 cubes = []
-spacing = 2  # Set the spacing back to its original value
+spacing = 2
 for x in range(-1, 2):
     for y in range(-1, 2):
         for z in range(-1, 2):
