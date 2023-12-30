@@ -3,7 +3,6 @@ from pygame.locals import *
 from OpenGL.GL import *
 from OpenGL.GLU import *
 import numpy as np
-import random
 
 #define screen dimensions
 WIDTH = 1920
@@ -61,9 +60,13 @@ class Cube:
 
         glPopMatrix()
 
-    def rotate(self, angle, axis, rotation_point):
+    def rotate(self, angle, axis, rotation_point, direction="clockwise"):
         # Update rotation
-        self.rotation -= angle
+        if direction == "clockwise":
+            self.rotation -= angle
+        else:
+            self.rotation += angle
+
         self.rotation_axis = axis
 
         # Convert rotation axis to a numpy array for matrix multiplication
@@ -75,8 +78,8 @@ class Cube:
         
         # Rotate the cube
         rotation_matrix = np.identity(4)
-        rotation_matrix[:3, :3] = np.dot(rotation_matrix[:3, :3], np.cos(np.radians(angle / 2)))
-        rotation_matrix[:3, :3] = rotation_matrix[:3, :3] + 2 * np.sin(np.radians(angle / 2)) * np.cross(rotation_axis_np, np.eye(3)) + 2 * np.power(np.sin(np.radians(angle / 2)), 2) * np.outer(rotation_axis_np, rotation_axis_np)
+        quaternion = np.array([np.cos(np.radians(angle / 2))] + list(np.sin(np.radians(angle / 2)) * rotation_axis_np))
+        rotation_matrix[:3, :3] = self.quaternion_to_matrix(quaternion)
 
         # Translate the cube back to its original position
         inverse_translation_matrix = np.identity(4)
@@ -88,9 +91,16 @@ class Cube:
         # Update cube position by applying the transformation matrix
         self.position = np.dot(transformation_matrix[:3, :3], np.array(self.position)) + transformation_matrix[:3, 3]
 
-
-
-
+    @staticmethod
+    def quaternion_to_matrix(quaternion):
+        w, x, y, z = quaternion
+        rotation_matrix = np.array([
+            [1 - 2*y**2 - 2*z**2, 2*x*y - 2*w*z, 2*x*z + 2*w*y],
+            [2*x*y + 2*w*z, 1 - 2*x**2 - 2*z**2, 2*y*z - 2*w*x],
+            [2*x*z - 2*w*y, 2*y*z + 2*w*x, 1 - 2*x**2 - 2*y**2]
+        ])
+        return rotation_matrix
+    
 class CubeSet:
     def __init__(self, size, spacing):
         self.cubes = []
@@ -145,7 +155,7 @@ while True:
 
     # Rotation for specific cubes
     for idx in cubes_to_rotate:
-        cube_set.cubes[idx].rotate(1, (0, 1, 0), cube_set.cubes[10].position)
+        cube_set.cubes[idx].rotate(1, (0, 1, 0), cube_set.cubes[10].position, 'acw')
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
