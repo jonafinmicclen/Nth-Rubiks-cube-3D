@@ -4,3 +4,5 @@ Features:
 Limitations:
 - No UI yet
 - Very slow and poorly optimised
+
+Please note this was made with a lot of assistance from ChatGPT.
