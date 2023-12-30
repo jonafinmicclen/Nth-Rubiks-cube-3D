@@ -161,10 +161,14 @@ def main():
     while True:
         handle_events()
 
+        # Rotation for full scene
+        glRotatef(0.5, 0, 1, 1)
+
         rubiks_cube.rotate_face(axis=(0, 0, 1), slice_no=1, angle=1)
         rubiks_cube1.rotate_face(axis=(0, 1, 0), slice_no=0, angle=-2)
         rubiks_cube2.rotate_face(axis=(1, 0, 0), slice_no=3, angle=1.5)
-        
+        rubiks_cube2.rotate_face(axis=(1, 0, 0), slice_no=0, angle=-1.5)
+
         render_frame(rubiks_cube, rubiks_cube1, rubiks_cube2)
         pygame.display.flip()
         clock.tick(TARGET_FPS)
