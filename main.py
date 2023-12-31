@@ -100,9 +100,7 @@ class Cube:
             [2*x*z - 2*w*y, 2*y*z + 2*w*x, 1 - 2*x**2 - 2*y**2]
         ])
         return rotation_matrix
-
-
-
+    
 class MagicCube:
     def __init__(self, size, spacing = 2, offset = [0,0,0]):
 
@@ -194,7 +192,7 @@ class MagicCube:
             self.rotate_slice(axis=random.choice(potential_axis.copy()), slice_no=random.choice(potential_slice_no.copy()), angle=random.choice(potential_angle))
 
     def update(self):
-
+        pass
 
     @staticmethod
     def rotate2DArray(array, direction, turns):
