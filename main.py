@@ -215,6 +215,7 @@ class MagicCube:
             self.current_turn["turning"] = True
             self.current_turn["currentAngle"] = 0
             self.current_turn["speed"] = speed
+            #h
             self.current_turn["totalAngle"] = angle
             self.current_turn["axis"] = axis
             self.current_turn["slice_no"] = slice_no
