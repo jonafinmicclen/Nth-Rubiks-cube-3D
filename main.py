@@ -3,6 +3,8 @@ from pygame.locals import *
 from OpenGL.GL import *
 from OpenGL.GLU import *
 import numpy as np
+import math
+import random
 
 # define screen dimensions
 WIDTH = 1920
@@ -104,6 +106,7 @@ class MagicCube:
 
         self.cubes = []
         self.size = size
+        self.current_turn_cubes = None
         #offset to keep cube in center
         for x in range(0, size):
             for y in range(0, size):
@@ -116,6 +119,7 @@ class MagicCube:
         self.x_slices = [[x * size * size + y * size + z for y in range(size) for z in range(size)] for x in range(size)]
         self.y_slices = [[x * size * size + y * size + z for x in range(size) for z in range(size)] for y in range(size)]
         self.z_slices = [[x * size * size + y * size + z for x in range(size) for y in range(size)] for z in range(size)]
+        self.x_y_z_slices = [self.x_slices, self.y_slices, self.z_slices]
 
     def draw(self):
         glPushMatrix()
@@ -123,8 +127,19 @@ class MagicCube:
             cube.draw()
         glPopMatrix()
 
-    def rotate_face(self, axis = (1,0,0), slice_no = 0, angle = 1):
+    def rotate_slice(self, axis = (1,0,0), slice_no = 0, angle = 1):
 
+        cubes_to_rotate = self.get_cubes_in_slice(axis, slice_no)
+        self.rotate_cubes(angle, axis, cubes_to_rotate)
+        self.rotate_cube_indicies(cubes_to_rotate, axis, angle)
+        self.current_turn_cubes = cubes_to_rotate
+
+    def rotate_cubes(self, angle, axis, cubes_to_rotate):
+        position_of_rotation_center = (np.asarray(self.cubes[cubes_to_rotate[0]].position) + np.asarray(self.cubes[cubes_to_rotate[-1]].position))/2
+        for cube_index in cubes_to_rotate:
+            self.cubes[cube_index].rotate(angle, axis, position_of_rotation_center)
+
+    def get_cubes_in_slice(self, axis, slice_no):
         match axis:
             case (1,0,0):
                 cubes_to_rotate = self.x_slices[slice_no]
@@ -132,10 +147,58 @@ class MagicCube:
                 cubes_to_rotate = self.y_slices[slice_no]
             case (0,0,1):
                 cubes_to_rotate = self.z_slices[slice_no]
+        return cubes_to_rotate
+    
+    def rotate_cube_indicies(self, cubes_to_rotate, axis, angle):
+        #Direction can only be 0 cw or 1 acw
+        #Rotating on different axis has different effect on cube index
+        if angle > 0:
+            if axis[1] == 1:
+                direction = 1
+            else:
+                direction = 0
+        else:
+            if axis[1] == 1:
+                direction = 0
+            else:
+                direction = 1
 
-        position_of_rotation_center = (np.asarray(self.cubes[cubes_to_rotate[0]].position) + np.asarray(self.cubes[cubes_to_rotate[-1]].position))/2
-        for cube_index in cubes_to_rotate:
-            self.cubes[cube_index].rotate(angle, axis, position_of_rotation_center)
+        if angle % 90 != 0:
+            raise Exception('Cannot rotate as not right angled')
+
+        cubes_to_rotate = np.reshape(cubes_to_rotate, (self.size, self.size))
+        turns = int(abs(angle)/90)
+
+        rotated_array = self.rotate2DArray(cubes_to_rotate, direction, turns)
+        rotated_array = rotated_array.flatten().tolist()
+
+        rotator_array = []
+        rotator_index = 0
+        for i in range(self.size**3):
+            if i in rotated_array:
+                rotator_array.append(rotated_array[rotator_index])
+                rotator_index += 1
+            else:
+                rotator_array.append(i)
+
+        cubes_old = self.cubes.copy()
+        self.cubes = [cubes_old[i] for i in rotator_array]
+
+    def scramble(self, scramble_length):
+        potential_axis = [(0,0,1),(0,1,0),(1,0,0)]
+        potential_angle = [-180,180, 90, -90]
+        potential_slice_no = [i for i in range(self.size)]
+        for _ in range(scramble_length):
+            self.rotate_slice(axis=random.choice(potential_axis.copy()), slice_no=random.choice(potential_slice_no.copy()), angle=random.choice(potential_angle))
+
+    def update(self):
+        pass
+
+    @staticmethod
+    def rotate2DArray(array, direction, turns):
+        for _ in range(turns):
+            array = np.flip(array.T, axis=direction)
+        return array
 
 def main():
 
@@ -154,22 +217,20 @@ def main():
     glEnable(GL_DEPTH_TEST)
 
     # Create rubiks cubes
-    rubiks_cube = MagicCube(size=3, offset=[6,0,0], spacing=2.2)
+    rubiks_cube = MagicCube(size=3, offset=[-4,-2,0], spacing=2.1)
     rubiks_cube1 = MagicCube(size=2, offset=[-4,0,0], spacing=2.2)
     rubiks_cube2 = MagicCube(size=4, offset=[-15,0,0], spacing=2.2)
 
+    rubiks_cube.scramble(50)
+    rubiks_cube1.scramble(100)
+    rubiks_cube2.scramble(1000)
+    
     while True:
         handle_events()
 
-        # Rotation for full scene
         glRotatef(0.5, 0, 1, 1)
 
-        rubiks_cube.rotate_face(axis=(0, 0, 1), slice_no=1, angle=1)
-        rubiks_cube1.rotate_face(axis=(0, 1, 0), slice_no=0, angle=-2)
-        rubiks_cube2.rotate_face(axis=(1, 0, 0), slice_no=3, angle=1.5)
-        rubiks_cube2.rotate_face(axis=(1, 0, 0), slice_no=0, angle=-1.5)
-
-        render_frame(rubiks_cube, rubiks_cube1, rubiks_cube2)
+        render_frame(rubiks_cube)
         pygame.display.flip()
         clock.tick(TARGET_FPS)
 
