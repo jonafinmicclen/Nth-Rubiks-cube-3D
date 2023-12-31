@@ -100,7 +100,9 @@ class Cube:
             [2*x*z - 2*w*y, 2*y*z + 2*w*x, 1 - 2*x**2 - 2*y**2]
         ])
         return rotation_matrix
-    
+
+
+
 class MagicCube:
     def __init__(self, size, spacing = 2, offset = [0,0,0]):
 
@@ -119,6 +121,7 @@ class MagicCube:
         self.x_slices = [[x * size * size + y * size + z for y in range(size) for z in range(size)] for x in range(size)]
         self.y_slices = [[x * size * size + y * size + z for x in range(size) for z in range(size)] for y in range(size)]
         self.z_slices = [[x * size * size + y * size + z for x in range(size) for y in range(size)] for z in range(size)]
+        self.x_y_z_slices = [self.x_slices, self.y_slices, self.z_slices]
 
     def draw(self):
         glPushMatrix()
@@ -126,8 +129,19 @@ class MagicCube:
             cube.draw()
         glPopMatrix()
 
-    def rotate_slice(self, axis = (1,0,0), slice_no = 0, angle = 1, axist = 0):
+    def rotate_slice(self, axis = (1,0,0), slice_no = 0, angle = 1):
 
+        cubes_to_rotate = self.get_cubes_in_slice(axis, slice_no)
+        self.rotate_cubes(angle, axis, cubes_to_rotate)
+        self.rotate_cube_indicies(cubes_to_rotate, axis, angle)
+        self.current_turn_cubes = cubes_to_rotate
+
+    def rotate_cubes(self, angle, axis, cubes_to_rotate):
+        position_of_rotation_center = (np.asarray(self.cubes[cubes_to_rotate[0]].position) + np.asarray(self.cubes[cubes_to_rotate[-1]].position))/2
+        for cube_index in cubes_to_rotate:
+            self.cubes[cube_index].rotate(angle, axis, position_of_rotation_center)
+
+    def get_cubes_in_slice(self, axis, slice_no):
         match axis:
             case (1,0,0):
                 cubes_to_rotate = self.x_slices[slice_no]
@@ -135,25 +149,30 @@ class MagicCube:
                 cubes_to_rotate = self.y_slices[slice_no]
             case (0,0,1):
                 cubes_to_rotate = self.z_slices[slice_no]
-
-        self.rotate_cubeset(angle, axis, cubes_to_rotate)
-        self.rotate_cube_indicies(cubes_to_rotate, axis, angle)
-        self.current_turn_cubes = cubes_to_rotate
-
-    def rotate_cubeset(self, angle, axis, cubes_to_rotate):
-        position_of_rotation_center = (np.asarray(self.cubes[cubes_to_rotate[0]].position) + np.asarray(self.cubes[cubes_to_rotate[-1]].position))/2
-        for cube_index in cubes_to_rotate:
-            self.cubes[cube_index].rotate(angle, axis, position_of_rotation_center)
+        return cubes_to_rotate
     
     def rotate_cube_indicies(self, cubes_to_rotate, axis, angle):
-        # Dodgy fix for cube index rearragnement ngl used trial and error to figure out which way to spin
-        if axis[1] == 1:
-            axist = 1 #This method of calculation wil not work if angle is not positive
+        #Direction can only be 0 cw or 1 acw
+        #Rotating on different axis has different effect on cube index
+        if angle > 0:
+            if axis[1] == 1:
+                direction = 1
+            else:
+                direction = 0
         else:
-            axist = 0
+            if axis[1] == 1:
+                direction = 0
+            else:
+                direction = 1
+
+        if angle % 90 != 0:
+            raise Exception('Cannot rotate as not right angled')
 
         cubes_to_rotate = np.reshape(cubes_to_rotate, (self.size, self.size))
-        rotated_array = np.flip(cubes_to_rotate.T, axis=axist).flatten().tolist() #this must be done twice if angle is 180 etc
+        turns = int(abs(angle)/90)
+
+        rotated_array = self.rotate2DArray(cubes_to_rotate, direction, turns)
+        rotated_array = rotated_array.flatten().tolist()
 
         rotator_array = []
         rotator_index = 0
@@ -169,11 +188,19 @@ class MagicCube:
 
     def scramble(self, scramble_length):
         potential_axis = [(0,0,1),(0,1,0),(1,0,0)]
-        potential_angle = [90]
+        potential_angle = [-180,180, 90, -90]
         potential_slice_no = [i for i in range(self.size)]
-
         for _ in range(scramble_length):
-            self.rotate_slice(axis=random.choice(potential_axis.copy()), slice_no=random.choice(potential_slice_no.copy()), angle=90)
+            self.rotate_slice(axis=random.choice(potential_axis.copy()), slice_no=random.choice(potential_slice_no.copy()), angle=random.choice(potential_angle))
+
+    def update(self):
+
+
+    @staticmethod
+    def rotate2DArray(array, direction, turns):
+        for _ in range(turns):
+            array = np.flip(array.T, axis=direction)
+        return array
 
 def main():
 
