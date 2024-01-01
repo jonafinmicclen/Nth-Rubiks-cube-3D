@@ -46,13 +46,17 @@ class Cube:
         self.colors = colors
         self.position = position
         self.rotation = 0
-        self.rotation_axis = (0, 0, 0)
+        self.rotation_axis = np.array([0, 0, 0])
+        self.rotations = [[0,[0,0,0]]]
 
     def draw(self):
         glPushMatrix()
 
         glTranslatef(self.position[0], self.position[1], self.position[2])
-        glRotatef(self.rotation, *self.rotation_axis)
+        r = self.rotations[::-1]
+        for angle, axis in r:
+            print(angle, axis)
+            glRotatef(angle, *axis)
 
         glBegin(GL_QUADS)
         for i, surface in enumerate(self.surfaces):
@@ -66,8 +70,10 @@ class Cube:
     def rotate(self, angle, axis, rotation_point):
 
         # Update rotation
-        self.rotation += angle
-        self.rotation_axis = axis
+        #
+        #self.rotation += angle
+        #self.rotation_axis += axis
+        self.rotations.append([angle,axis])
 
         # Convert rotation axis to a numpy array for matrix multiplication
         rotation_axis_np = np.array(axis)
