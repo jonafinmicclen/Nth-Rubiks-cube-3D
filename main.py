@@ -22,9 +22,6 @@ GREEN = (25,155,76)
 YELLOW = (254,213,47)
 ALL_COLORS = np.array([WHITE, GREEN, YELLOW, BLUE, RED, ORANGE])/255
 
-
-
-
 class Cube:
     def __init__(self, position, colors):
         self.vertices = (
@@ -37,7 +34,6 @@ class Cube:
             (-1, -1, 1),
             (-1, 1, 1)
         )
-
         self.surfaces = (
             (0, 1, 2, 3),
             (3, 2, 7, 6),
@@ -46,62 +42,43 @@ class Cube:
             (1, 5, 7, 2),
             (4, 0, 3, 6)
         )
-
         self.colors = colors
         self.position = position
-        self.rotations = [[0,[0,0,0]]]
         self.rotation_axis = np.array((1,0,0))
         self.rotation_angle = 0
 
     def draw(self):
         glPushMatrix()
-
         glTranslatef(self.position[0], self.position[1], self.position[2])
         glRotatef(self.rotation_angle, *self.rotation_axis)
-
         glBegin(GL_QUADS)
         for i, surface in enumerate(self.surfaces):
             for vertex in surface:
                 glColor3fv(self.colors[i])
                 glVertex3fv((self.vertices[vertex][0], self.vertices[vertex][1], self.vertices[vertex][2]))
         glEnd()
-
         glPopMatrix()
 
     def rotate(self, angle, axis, rotation_point):
 
-        # Convert axis-angle to rotation matrix
+        # Rotate angle
         rot_matrix1 = R.from_rotvec(np.radians(self.rotation_angle) * self.normalize_vector(self.rotation_axis)).as_matrix()
         rot_matrix2 = R.from_rotvec(np.radians(angle) * self.normalize_vector(axis)).as_matrix()
-
-        # Multiply rotation matrices
         rot_matrix_combined = np.dot(rot_matrix2, rot_matrix1)
-
-        # Convert back to axis-angle
         combined_rotation = R.from_matrix(rot_matrix_combined)
         combined_rotation_vector = combined_rotation.as_rotvec()
-        axis_combined = combined_rotation_vector[:3]
-        angle_combined = np.rad2deg(np.linalg.norm(combined_rotation_vector))
-        self.rotation_axis = axis_combined
-        self.rotation_angle = angle_combined
+        self.rotation_axis = combined_rotation_vector[:3]
+        self.rotation_angle = np.rad2deg(np.linalg.norm(combined_rotation_vector))
 
-        # Translate the cube to the rotation point
+        # Rotate position
         translation_matrix = np.identity(4)
         translation_matrix[:3, 3] = -np.array(rotation_point)
-        
-        # Rotate the cube
         rotation_matrix = np.identity(4)
         quaternion = np.array([np.cos(np.radians(angle / 2))] + list(np.sin(np.radians(angle / 2)) * np.array(axis)))
         rotation_matrix[:3, :3] = self.quaternion_to_matrix(quaternion)
-
-        # Translate the cube back to its original position
         inverse_translation_matrix = np.identity(4)
         inverse_translation_matrix[:3, 3] = np.array(rotation_point)
-
-        # Combine the transformation matrices
         transformation_matrix = np.dot(inverse_translation_matrix, np.dot(rotation_matrix, translation_matrix))
-
-        # Update cube position by applying the transformation matrix
         self.position = np.dot(transformation_matrix[:3, :3], np.array(self.position)) + transformation_matrix[:3, 3]
 
     @staticmethod
@@ -188,10 +165,9 @@ class MagicCube:
                 direction = 0
             else:
                 direction = 1
-
         if angle % 90 != 0:
             raise Exception('Cannot rotate as not right angled')
-
+        
         turns = int(abs(angle)/90)
 
         cubes_to_rotate = np.reshape(cubes_to_rotate, (self.size, self.size))
@@ -235,7 +211,6 @@ class MagicCube:
             self.current_turn["turning"] = True
             self.current_turn["currentAngle"] = 0
             self.current_turn["speed"] = speed
-            #h
             self.current_turn["totalAngle"] = angle
             self.current_turn["axis"] = axis
             self.current_turn["slice_no"] = slice_no
@@ -247,7 +222,6 @@ class MagicCube:
         speed = math.copysign(6, angle)
         potential_slice_no = [i for i in range(self.size)]
         self.animated_turn(axis=random.choice(potential_axis.copy()), slice_no=random.choice(potential_slice_no.copy()), angle=angle, speed=speed)
-        
 
     @staticmethod
     def rotate2DArray(array, direction, turns):
@@ -287,9 +261,7 @@ def main():
         handle_events()
 
         glRotatef(0.5, 0, 1, 1)
-
         rubiks_cube.update()
-
         render_frame(rubiks_cube)
         pygame.display.flip()
         clock.tick(TARGET_FPS)
