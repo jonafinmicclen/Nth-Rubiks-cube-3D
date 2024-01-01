@@ -11,7 +11,7 @@ from scipy.spatial.transform import Rotation as R
 WIDTH = 1920
 HEIGHT = 1080
 WINDOW_NAME = 'Rubiks Cube Sim'
-TARGET_FPS = 30
+TARGET_FPS = 100
 
 # define colors
 WHITE = (255,255,255)
@@ -125,6 +125,12 @@ class MagicCube:
             "speed":1
         }
 
+        self.movesetCounter = 0
+        self.movesetTotalLoops = 0
+        self.testMoveSet = [self.generateRandomMove() for _ in range(15)] 
+        oppossite_moves = [[a,b,-c,-d] for a, b, c, d in reversed(self.testMoveSet.copy())]
+        self.testMoveSet.extend(oppossite_moves)
+
     def draw(self):
         glPushMatrix()
         for cube in self.cubes:
@@ -194,15 +200,27 @@ class MagicCube:
             self.rotate_slice(axis=random.choice(potential_axis.copy()), slice_no=random.choice(potential_slice_no.copy()), angle=random.choice(potential_angle), updateIndex=True)
 
     def update(self):
-        if self.current_turn["turning"] and abs(self.current_turn["currentAngle"]) < abs(self.current_turn["totalAngle"]):
-            self.rotate_slice(axis=self.current_turn["axis"], slice_no=self.current_turn["slice_no"], angle=self.current_turn["speed"])
-            self.current_turn["currentAngle"] += self.current_turn["speed"]
+        self.update_turn()
+
+    def update_turn(self):
+
+        if self.testIsTurning():
+            self.during_turn()
         else:
-            self.current_turn["turning"] = False
-            #Current fix for index in animated turn
-            cubess = self.get_cubes_in_slice(self.current_turn["axis"], self.current_turn["slice_no"])
-            self.rotate_cube_indicies(cubess, self.current_turn["axis"], self.current_turn["totalAngle"])
-            self.random_animated_turn()
+            self.end_of_turn()
+
+    def testIsTurning(self):
+        return self.current_turn["turning"] and abs(self.current_turn["currentAngle"]) < abs(self.current_turn["totalAngle"])
+
+    def during_turn(self):
+        self.rotate_slice(axis=self.current_turn["axis"], slice_no=self.current_turn["slice_no"], angle=self.current_turn["speed"])
+        self.current_turn["currentAngle"] += self.current_turn["speed"]
+
+    def end_of_turn(self):
+        self.current_turn["turning"] = False
+        cubess = self.get_cubes_in_slice(self.current_turn["axis"], self.current_turn["slice_no"])
+        self.rotate_cube_indicies(cubess, self.current_turn["axis"], self.current_turn["totalAngle"])
+        self.playMoveSet()
 
     def animated_turn(self, axis = (1,0,0), slice_no = 0, angle = 90, speed = 1): #Speed must be divisible by 90, should add snap function to correct for this
         if self.current_turn["turning"] == True:
@@ -213,15 +231,37 @@ class MagicCube:
             self.current_turn["speed"] = speed
             self.current_turn["totalAngle"] = angle
             self.current_turn["axis"] = axis
-            self.current_turn["slice_no"] = slice_no
+            self.current_turn["slice_no"] = slice_no                   
 
     def random_animated_turn(self):
         potential_axis = [(0,0,1),(0,1,0),(1,0,0)]
-        potential_angle = [-90, 90, 180, -180]
+        potential_angle = [-90, 90, 180]
         angle = random.choice(potential_angle)
-        speed = math.copysign(6, angle)
+        if abs(angle) > 90:
+            speed = math.copysign(15, angle)
+        else:
+            speed = math.copysign(6, angle)
         potential_slice_no = [i for i in range(self.size)]
         self.animated_turn(axis=random.choice(potential_axis.copy()), slice_no=random.choice(potential_slice_no.copy()), angle=angle, speed=speed)
+
+    def playMoveSet(self):
+
+        if self.movesetCounter < len(self.testMoveSet):
+            self.animated_turn(*self.testMoveSet[self.movesetCounter])
+            self.movesetCounter+=1
+            
+
+    def generateRandomMove(self):
+        potential_axis = [(0,0,1),(0,1,0),(1,0,0)]
+        potential_angle = [-90, 90, 180]
+        angle = random.choice(potential_angle)
+        if abs(angle) > 90:
+            speed = math.copysign(15, angle)
+        else:
+            speed = math.copysign(6, angle)
+        potential_slice_no = [i for i in range(self.size)]
+        return([random.choice(potential_axis.copy()), random.choice(potential_slice_no.copy()), angle, speed])
+        
 
     @staticmethod
     def rotate2DArray(array, direction, turns):
@@ -247,22 +287,22 @@ def main():
 
     # Create rubiks cubes
     rubiks_cube = MagicCube(size=3, offset=[-4,-2,0], spacing=2.1)
-    rubiks_cube1 = MagicCube(size=2, offset=[-4,0,0], spacing=2.2)
-    rubiks_cube2 = MagicCube(size=4, offset=[-15,0,0], spacing=2.2)
-
-    #rubiks_cube.scramble(50)
-    rubiks_cube1.scramble(100)
-    rubiks_cube2.scramble(1000)
+    rubiks_cube1 = MagicCube(size=1, offset=[8,0,0], spacing=2.1)
+    rubiks_cube2 = MagicCube(size=2, offset=[-15,0,0], spacing=2.1)
 
     #rubiks_cube.animated_turn(axis = (1,0,0), slice_no = 0, angle = 180, speed = 1)
-    rubiks_cube.random_animated_turn()
+    rubiks_cube.playMoveSet()
+    rubiks_cube1.playMoveSet()
+    rubiks_cube2.playMoveSet()
     
     while True:
         handle_events()
 
-        glRotatef(0.5, 0, 1, 1)
+        glRotatef(0.5, 0, 1, 1)                                                                                                                     
         rubiks_cube.update()
-        render_frame(rubiks_cube)
+        rubiks_cube1.update()
+        rubiks_cube2.update()
+        render_frame(rubiks_cube, rubiks_cube1, rubiks_cube2)
         pygame.display.flip()
         clock.tick(TARGET_FPS)
 
