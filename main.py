@@ -55,7 +55,6 @@ class Cube:
         glTranslatef(self.position[0], self.position[1], self.position[2])
         r = self.rotations[::-1]
         for angle, axis in r:
-            print(angle, axis)
             glRotatef(angle, *axis)
 
         glBegin(GL_QUADS)
@@ -73,7 +72,10 @@ class Cube:
         #
         #self.rotation += angle
         #self.rotation_axis += axis
-        self.rotations.append([angle,axis])
+        if self.rotations[-1][0] == axis:
+            self.rotations[-1][1]+=angle
+        else:
+            self.rotations.append([angle,axis])
 
         # Convert rotation axis to a numpy array for matrix multiplication
         rotation_axis_np = np.array(axis)
@@ -227,7 +229,6 @@ class MagicCube:
             self.current_turn["slice_no"] = slice_no
 
     def random_animated_turn(self):
-        print('initiating turn')
         potential_axis = [(0,0,1),(0,1,0),(1,0,0)]
         potential_angle = [90]
         potential_slice_no = [i for i in range(self.size)]
