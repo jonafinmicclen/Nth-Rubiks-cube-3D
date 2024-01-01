@@ -45,8 +45,6 @@ class Cube:
 
         self.colors = colors
         self.position = position
-        self.rotation = 0
-        self.rotation_axis = np.array([0, 0, 0])
         self.rotations = [[0,[0,0,0]]]
 
     def draw(self):
@@ -68,14 +66,10 @@ class Cube:
 
     def rotate(self, angle, axis, rotation_point):
 
-        # Update rotation
-        #
-        #self.rotation += angle
-        #self.rotation_axis += axis
-        if self.rotations[-1][0] == axis:
+        if self.rotations[-1][0] == axis: #Can add other list reduction measures and eventually it will not infinitly leak
             self.rotations[-1][1]+=angle
         else:
-            self.rotations.append([angle,axis])
+            self.rotations.append([angle,axis]) 
 
         # Convert rotation axis to a numpy array for matrix multiplication
         rotation_axis_np = np.array(axis)
@@ -230,9 +224,11 @@ class MagicCube:
 
     def random_animated_turn(self):
         potential_axis = [(0,0,1),(0,1,0),(1,0,0)]
-        potential_angle = [90]
+        potential_angle = [-90, 90, 180, -180]
+        angle = random.choice(potential_angle)
+        speed = math.copysign(6, angle)
         potential_slice_no = [i for i in range(self.size)]
-        self.animated_turn(axis=random.choice(potential_axis.copy()), slice_no=random.choice(potential_slice_no.copy()), angle=random.choice(potential_angle), speed=6)
+        self.animated_turn(axis=random.choice(potential_axis.copy()), slice_no=random.choice(potential_slice_no.copy()), angle=angle, speed=speed)
         
 
     @staticmethod
@@ -252,13 +248,13 @@ def main():
 
     # Position perspective
     gluPerspective(45, (display[0] / display[1]), 0.1, 50.0)
-    glTranslatef(0.0, 0.0, -30)
+    glTranslatef(0.0, 0.0, -40)
 
     # Enable depth testing so only correct faces are drawn
     glEnable(GL_DEPTH_TEST)
 
     # Create rubiks cubes
-    rubiks_cube = MagicCube(size=3, offset=[-4,-2,0], spacing=2.1)
+    rubiks_cube = MagicCube(size=7, offset=[-4,-2,0], spacing=2.1)
     rubiks_cube1 = MagicCube(size=2, offset=[-4,0,0], spacing=2.2)
     rubiks_cube2 = MagicCube(size=4, offset=[-15,0,0], spacing=2.2)
 
