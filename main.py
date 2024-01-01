@@ -45,14 +45,20 @@ class Cube:
 
         self.colors = colors
         self.position = position
-        self.rotation = 0
-        self.rotation_axis = (0, 0, 0)
+        self.rotation_0 = 0
+        self.rotation_axis_0 = (1, 0, 0)
+        self.rotation_1 = 0
+        self.rotation_axis_1 = (0, 1, 0)
+        self.rotation_2 = 0
+        self.rotation_axis_2 = (0, 0, 1)
 
     def draw(self):
         glPushMatrix()
 
         glTranslatef(self.position[0], self.position[1], self.position[2])
-        glRotatef(self.rotation, *self.rotation_axis)
+        glRotatef(self.rotation_0, *self.rotation_axis_0)
+        glRotatef(self.rotation_1, *self.rotation_axis_1)
+        glRotatef(self.rotation_2, *self.rotation_axis_2)
 
         glBegin(GL_QUADS)
         for i, surface in enumerate(self.surfaces):
@@ -66,8 +72,13 @@ class Cube:
     def rotate(self, angle, axis, rotation_point):
 
         # Update rotation
-        self.rotation += angle
-        self.rotation_axis = axis
+        match axis:
+            case (1,0,0):
+                self.rotation_0 += angle
+            case (0,1,0):
+                self.rotation_1 += angle
+            case (0,0,1):
+                self.rotation_2 -= angle
 
         # Convert rotation axis to a numpy array for matrix multiplication
         rotation_axis_np = np.array(axis)
@@ -221,7 +232,6 @@ class MagicCube:
             self.current_turn["slice_no"] = slice_no
 
     def random_animated_turn(self):
-        print('initiating turn')
         potential_axis = [(0,0,1),(0,1,0),(1,0,0)]
         potential_angle = [90]
         potential_slice_no = [i for i in range(self.size)]
