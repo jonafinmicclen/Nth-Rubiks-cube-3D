@@ -5,6 +5,7 @@ from OpenGL.GLU import *
 import numpy as np
 import math
 import random
+from scipy.spatial.transform import Rotation as R
 
 # define screen dimensions
 WIDTH = 1920
@@ -20,6 +21,9 @@ ORANGE = (255,85,37)
 GREEN = (25,155,76)
 YELLOW = (254,213,47)
 ALL_COLORS = np.array([WHITE, GREEN, YELLOW, BLUE, RED, ORANGE])/255
+
+
+
 
 class Cube:
     def __init__(self, position, colors):
@@ -46,14 +50,14 @@ class Cube:
         self.colors = colors
         self.position = position
         self.rotations = [[0,[0,0,0]]]
+        self.rotation_axis = np.array((1,0,0))
+        self.rotation_angle = 0
 
     def draw(self):
         glPushMatrix()
 
         glTranslatef(self.position[0], self.position[1], self.position[2])
-        r = self.rotations[::-1]
-        for angle, axis in r:
-            glRotatef(angle, *axis)
+        glRotatef(self.rotation_angle, *self.rotation_axis)
 
         glBegin(GL_QUADS)
         for i, surface in enumerate(self.surfaces):
@@ -66,13 +70,20 @@ class Cube:
 
     def rotate(self, angle, axis, rotation_point):
 
-        if self.rotations[-1][0] == axis: #Can add other list reduction measures and eventually it will not infinitly leak
-            self.rotations[-1][1]+=angle
-        else:
-            self.rotations.append([angle,axis]) 
+        # Convert axis-angle to rotation matrix
+        rot_matrix1 = R.from_rotvec(np.radians(self.rotation_angle) * self.normalize_vector(self.rotation_axis)).as_matrix()
+        rot_matrix2 = R.from_rotvec(np.radians(angle) * self.normalize_vector(axis)).as_matrix()
 
-        # Convert rotation axis to a numpy array for matrix multiplication
-        rotation_axis_np = np.array(axis)
+        # Multiply rotation matrices
+        rot_matrix_combined = np.dot(rot_matrix2, rot_matrix1)
+
+        # Convert back to axis-angle
+        combined_rotation = R.from_matrix(rot_matrix_combined)
+        combined_rotation_vector = combined_rotation.as_rotvec()
+        axis_combined = combined_rotation_vector[:3]
+        angle_combined = np.rad2deg(np.linalg.norm(combined_rotation_vector))
+        self.rotation_axis = axis_combined
+        self.rotation_angle = angle_combined
 
         # Translate the cube to the rotation point
         translation_matrix = np.identity(4)
@@ -80,7 +91,7 @@ class Cube:
         
         # Rotate the cube
         rotation_matrix = np.identity(4)
-        quaternion = np.array([np.cos(np.radians(angle / 2))] + list(np.sin(np.radians(angle / 2)) * rotation_axis_np))
+        quaternion = np.array([np.cos(np.radians(angle / 2))] + list(np.sin(np.radians(angle / 2)) * np.array(axis)))
         rotation_matrix[:3, :3] = self.quaternion_to_matrix(quaternion)
 
         # Translate the cube back to its original position
@@ -102,6 +113,13 @@ class Cube:
             [2*x*z - 2*w*y, 2*y*z + 2*w*x, 1 - 2*x**2 - 2*y**2]
         ])
         return rotation_matrix
+    
+    @staticmethod
+    def normalize_vector(vector):
+        magnitude = np.linalg.norm(vector)
+        if magnitude == 0:
+            return vector
+        return vector / magnitude
     
 class MagicCube:
     def __init__(self, size, spacing = 2, offset = [0,0,0]):
@@ -254,7 +272,7 @@ def main():
     glEnable(GL_DEPTH_TEST)
 
     # Create rubiks cubes
-    rubiks_cube = MagicCube(size=7, offset=[-4,-2,0], spacing=2.1)
+    rubiks_cube = MagicCube(size=3, offset=[-4,-2,0], spacing=2.1)
     rubiks_cube1 = MagicCube(size=2, offset=[-4,0,0], spacing=2.2)
     rubiks_cube2 = MagicCube(size=4, offset=[-15,0,0], spacing=2.2)
 
