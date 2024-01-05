@@ -46,17 +46,13 @@ class Cube:
         self.position = position
         self.rotation_axis = np.array((1,0,0))
         self.rotation_angle = 0
+        self.create_display_list()
 
     def draw(self):
         glPushMatrix()
         glTranslatef(self.position[0], self.position[1], self.position[2])
         glRotatef(self.rotation_angle, *self.rotation_axis)
-        glBegin(GL_QUADS)
-        for i, surface in enumerate(self.surfaces):
-            for vertex in surface:
-                glColor3fv(self.colors[i])
-                glVertex3fv((self.vertices[vertex][0], self.vertices[vertex][1], self.vertices[vertex][2]))
-        glEnd()
+        glCallList(self.display_list)
         glPopMatrix()
 
     def rotate(self, angle, axis, rotation_point):
@@ -81,6 +77,19 @@ class Cube:
         transformation_matrix = np.dot(inverse_translation_matrix, np.dot(rotation_matrix, translation_matrix))
         self.position = np.dot(transformation_matrix[:3, :3], np.array(self.position)) + transformation_matrix[:3, 3]
 
+    def create_display_list(self):
+        self.display_list = glGenLists(1)
+        glNewList(self.display_list, GL_COMPILE)
+        glPushMatrix()
+        glBegin(GL_QUADS)
+        for i, surface in enumerate(self.surfaces):
+            for vertex in surface:
+                glColor3fv(self.colors[i])
+                glVertex3fv((self.vertices[vertex][0], self.vertices[vertex][1], self.vertices[vertex][2]))
+        glEnd()
+        glPopMatrix()
+        glEndList()
+
     @staticmethod
     def quaternion_to_matrix(quaternion):
         w, x, y, z = quaternion
@@ -97,6 +106,7 @@ class Cube:
         if magnitude == 0:
             return vector
         return vector / magnitude
+    
     
 class MagicCube:
     def __init__(self, size, spacing = 2, offset = [0,0,0]):
@@ -127,7 +137,7 @@ class MagicCube:
 
         self.movesetCounter = 0
         self.movesetTotalLoops = 0
-        self.testMoveSet = [self.generateRandomMove() for _ in range(15)] 
+        self.testMoveSet = [self.generateRandomMove() for _ in range(100)] 
         oppossite_moves = [[a,b,-c,-d] for a, b, c, d in reversed(self.testMoveSet.copy())]
         self.testMoveSet.extend(oppossite_moves)
 
@@ -279,30 +289,33 @@ def main():
     clock = pygame.time.Clock()
 
     # Position perspective
-    gluPerspective(45, (display[0] / display[1]), 0.1, 50.0)
-    glTranslatef(0.0, 0.0, -40)
+    gluPerspective(45, (display[0] / display[1]), 0.1, 300.0)
+    glTranslatef(0.0, 0.0, -150)
 
     # Enable depth testing so only correct faces are drawn
     glEnable(GL_DEPTH_TEST)
 
     # Create rubiks cubes
-    rubiks_cube = MagicCube(size=3, offset=[-4,-2,0], spacing=2.1)
-    rubiks_cube1 = MagicCube(size=1, offset=[8,0,0], spacing=2.1)
-    rubiks_cube2 = MagicCube(size=2, offset=[-15,0,0], spacing=2.1)
+    rubiks_cube = MagicCube(size=10, offset=[-4,-7,0], spacing=2.1)
+    rubiks_cube1 = MagicCube(size=2, offset=[8,-7,3], spacing=2.1)
+    rubiks_cube2 = MagicCube(size=2, offset=[-15,-7,0], spacing=2.1)
+    rubiks_cube3 = MagicCube(size=2, offset=[-105,1,-10], spacing=2.1)
 
     #rubiks_cube.animated_turn(axis = (1,0,0), slice_no = 0, angle = 180, speed = 1)
     rubiks_cube.playMoveSet()
     rubiks_cube1.playMoveSet()
     rubiks_cube2.playMoveSet()
+    rubiks_cube3.playMoveSet()
     
     while True:
         handle_events()
 
-        glRotatef(0.5, 0, 1, 1)                                                                                                                     
+        glRotatef(0.5, 3, 1, 1)                                                                                                                     
         rubiks_cube.update()
         rubiks_cube1.update()
         rubiks_cube2.update()
-        render_frame(rubiks_cube, rubiks_cube1, rubiks_cube2)
+        rubiks_cube3.update()
+        render_frame(rubiks_cube, rubiks_cube1, rubiks_cube2, rubiks_cube3)
         pygame.display.flip()
         clock.tick(TARGET_FPS)
 
