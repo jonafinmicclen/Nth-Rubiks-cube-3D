@@ -11,7 +11,7 @@ from scipy.spatial.transform import Rotation as R
 WIDTH = 1920
 HEIGHT = 1080
 WINDOW_NAME = 'Rubiks Cube Sim'
-TARGET_FPS = 100
+TARGET_FPS = 60
 
 # define colors
 WHITE = (255,255,255)
@@ -296,7 +296,7 @@ def main():
     glEnable(GL_DEPTH_TEST)
 
     # Create rubiks cubes
-    rubiks_cube = MagicCube(size=10, offset=[-4,-7,0], spacing=2.1)
+    rubiks_cube = MagicCube(size=7, offset=[-4,-0,0], spacing=2.1)
     rubiks_cube1 = MagicCube(size=2, offset=[8,-7,3], spacing=2.1)
     rubiks_cube2 = MagicCube(size=2, offset=[-15,-7,0], spacing=2.1)
     rubiks_cube3 = MagicCube(size=2, offset=[-105,1,-10], spacing=2.1)
