@@ -5,8 +5,11 @@ Features:
 - Reasonably optimised (good enough for rubiks cube)
 
 Example use:
+
 `rubiks_cube = MagicCube(size=19, offset=[-30,-30,-30], spacing=2)`
+
 `rubiks_cube.animated_turn(axis = (1,0,0), slice_no = 0, angle = 180, speed = 1)`
+
 `rubiks_cube.playMoveSet()`
 
 Ensure to update the cube every frame (:.
