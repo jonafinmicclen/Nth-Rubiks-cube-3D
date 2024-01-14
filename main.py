@@ -23,7 +23,10 @@ YELLOW = (254,213,47)
 ALL_COLORS = np.array([WHITE, GREEN, YELLOW, BLUE, RED, ORANGE])/255
 
 class Cube:
-    def __init__(self, position, colors):
+    def __init__(self, position, colors, virtual = False):
+        
+        self.virtual = virtual
+        
         self.vertices = (
             (1, -1, -1),
             (1, 1, -1),
@@ -49,6 +52,8 @@ class Cube:
         self.create_display_list()
 
     def draw(self):
+        if self.virtual:
+            return
         glPushMatrix()
         glTranslatef(self.position[0], self.position[1], self.position[2])
         glRotatef(self.rotation_angle, *self.rotation_axis)
@@ -56,6 +61,8 @@ class Cube:
         glPopMatrix()
 
     def rotate(self, angle, axis, rotation_point):
+        if self.virtual:
+            return
 
         # Rotate angle
         rot_matrix1 = R.from_rotvec(np.radians(self.rotation_angle) * self.normalize_vector(self.rotation_axis)).as_matrix()
@@ -78,6 +85,8 @@ class Cube:
         self.position = np.dot(transformation_matrix[:3, :3], np.array(self.position)) + transformation_matrix[:3, 3]
 
     def create_display_list(self):
+        if self.virtual:
+            return
         self.display_list = glGenLists(1)
         glNewList(self.display_list, GL_COMPILE)
         glPushMatrix()
@@ -113,13 +122,15 @@ class MagicCube:
 
         self.cubes = []
         self.size = size
+        colors = ALL_COLORS
 
         for x in range(0, size):
             for y in range(0, size):
                 for z in range(0, size):
-                    colors = ALL_COLORS
-                    cube = Cube(position=(x * spacing + offset[0], y * spacing + offset[1], z * spacing + offset[2]), colors=colors)
-                    self.cubes.append(cube)
+                    if min(x,y,z)==0 or max(x,y,z)==size-1: # Apply virutal flag to cubes in middle
+                        self.cubes.append(Cube(position=(x * spacing + offset[0], y * spacing + offset[1], z * spacing + offset[2]), colors=colors, virtual = False))
+                    else:
+                        self.cubes.append(Cube(position=(x * spacing + offset[0], y * spacing + offset[1], z * spacing + offset[2]), colors=colors, virtual = True))
 
         self.x_slices = [[x * size * size + y * size + z for y in range(size) for z in range(size)] for x in range(size)]
         self.y_slices = [[x * size * size + y * size + z for x in range(size) for z in range(size)] for y in range(size)]
@@ -296,7 +307,7 @@ def main():
     glEnable(GL_DEPTH_TEST)
 
     # Create rubiks cubes
-    rubiks_cube = MagicCube(size=7, offset=[-4,-0,0], spacing=2.1)
+    rubiks_cube = MagicCube(size=20, offset=[-4,-0,0], spacing=2.1)
     rubiks_cube1 = MagicCube(size=2, offset=[8,-7,3], spacing=2.1)
     rubiks_cube2 = MagicCube(size=2, offset=[-15,-7,0], spacing=2.1)
     rubiks_cube3 = MagicCube(size=2, offset=[-105,1,-10], spacing=2.1)
